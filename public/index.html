@@ -190,17 +190,40 @@ print('hello world')"></textarea>
     document.getElementById('nav').classList.toggle('open');
   });
 
-  // demo-only obfuscate button (placeholder logic, real engine plugs in later)
-  document.getElementById('obfBtn').addEventListener('click', () => {
+  document.getElementById('obfBtn').addEventListener('click', async () => {
     const input = document.getElementById('codeInput').value.trim();
+    const preset = document.getElementById('preset').value;
     const resultBox = document.getElementById('result');
+    const btn = document.getElementById('obfBtn');
+
     if(!input){
       resultBox.textContent = 'Paste some code first.';
       resultBox.classList.add('placeholder');
       return;
     }
+
     resultBox.classList.remove('placeholder');
-    resultBox.textContent = '-- obfuscated with Hioshi (' + document.getElementById('preset').value + ' preset)\n-- [this is a UI preview — real Prometheus output goes here]';
+    resultBox.textContent = 'Obfuscating...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/obfuscate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: input, preset })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        resultBox.textContent = data.error || 'Something went wrong.';
+      } else {
+        resultBox.textContent = `Raw link: ${data.raw_url}\n\nUse this in loadstring(game:HttpGet("${data.raw_url}"))()`;
+      }
+    } catch (err) {
+      resultBox.textContent = 'Network error — could not reach the server.';
+    } finally {
+      btn.disabled = false;
+    }
   });
 </script>
 
