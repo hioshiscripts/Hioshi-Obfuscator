@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hioshi Obfuscator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:#000;
+    color:#ededed;
+    font-family:'Inter', sans-serif;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 32px; border-bottom:1px solid #1a1a1a;
+  }
+  .logo{ font-weight:700; font-size:16px; letter-spacing:-0.2px; }
+
+  nav{ display:flex; gap:6px; }
+  nav button{
+    background:none; border:1px solid #1a1a1a; color:#9a9a9a;
+    font-size:13px; padding:8px 16px; border-radius:6px; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:.15s;
+  }
+  nav button:hover{ color:#ededed; border-color:#333; }
+  nav button.active{ background:#ededed; color:#000; border-color:#ededed; }
+
+  /* hamburger for mobile */
+  .burger{ display:none; flex-direction:column; gap:4px; cursor:pointer; }
+  .burger span{ width:20px; height:2px; background:#ededed; }
+
+  main{ max-width:760px; margin:0 auto; padding:60px 24px 100px; }
+  .page{ display:none; }
+  .page.active{ display:block; animation:fade .2s ease; }
+  @keyframes fade{ from{opacity:0} to{opacity:1} }
+
+  h1{ font-size:32px; font-weight:700; letter-spacing:-0.5px; margin-bottom:14px; }
+  p.lead{ color:#9a9a9a; font-size:15px; line-height:1.7; margin-bottom:32px; }
+
+  /* Obfuscator page */
+  textarea{
+    width:100%; min-height:220px; background:#0a0a0a; border:1px solid #1a1a1a;
+    border-radius:8px; color:#ededed; padding:16px; font-size:13px; resize:vertical;
+    font-family:'JetBrains Mono', monospace; line-height:1.6;
+  }
+  textarea:focus{ outline:none; border-color:#444; }
+
+  .controls{ display:flex; align-items:center; gap:12px; margin:16px 0 28px; flex-wrap:wrap; }
+  select{
+    background:#0a0a0a; border:1px solid #1a1a1a; color:#ededed; font-size:13px;
+    padding:9px 12px; border-radius:6px; font-family:'Inter',sans-serif;
+  }
+  .btn{
+    background:#ededed; color:#000; border:none; font-size:14px; font-weight:600;
+    padding:11px 22px; border-radius:6px; cursor:pointer;
+  }
+  .btn:hover{ opacity:.85; }
+
+  .result{
+    border:1px solid #1a1a1a; border-radius:8px; background:#0a0a0a; padding:16px;
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:#7ee787;
+    min-height:60px; white-space:pre-wrap; word-break:break-all;
+  }
+  .result.placeholder{ color:#555; }
+
+  /* Q&A */
+  .qa-item{ border-bottom:1px solid #1a1a1a; padding:18px 0; }
+  .qa-item h3{ font-size:15px; font-weight:600; margin-bottom:8px; }
+  .qa-item p{ font-size:14px; color:#9a9a9a; line-height:1.6; }
+
+  /* Privacy */
+  .privacy p, .privacy li{ font-size:14px; color:#9a9a9a; line-height:1.75; margin-bottom:14px; }
+  .privacy h3{ font-size:16px; margin:24px 0 10px; color:#ededed; }
+
+  footer{ text-align:center; padding:24px; border-top:1px solid #1a1a1a; font-size:12px; color:#555; }
+
+  @media(max-width:640px){
+    nav{ display:none; }
+    nav.open{ display:flex; flex-direction:column; position:absolute; top:60px; right:24px; background:#0a0a0a; border:1px solid #1a1a1a; padding:8px; border-radius:8px; z-index:10;}
+    .burger{ display:flex; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Hioshi Obfuscator</div>
+  <nav id="nav">
+    <button class="active" data-page="obfuscator">Obfuscator</button>
+    <button data-page="qa">Q&amp;A</button>
+    <button data-page="privacy">Privacy &amp; Policy</button>
+  </nav>
+  <div class="burger" id="burger"><span></span><span></span><span></span></div>
+</header>
+
+<main>
+
+  <!-- OBFUSCATOR -->
+  <section class="page active" id="obfuscator">
+    <h1>Obfuscator</h1>
+    <p class="lead">Paste your Lua script below and get a hardened, obfuscated build.</p>
+
+    <textarea id="codeInput" placeholder="-- paste your Lua script here
+print('hello world')"></textarea>
+
+    <div class="controls">
+      <select id="preset">
+        <option value="minify">Minify</option>
+        <option value="weak">Weak</option>
+        <option value="medium" selected>Medium</option>
+        <option value="strong">Strong</option>
+      </select>
+      <button class="btn" id="obfBtn">Obfuscate</button>
+    </div>
+
+    <div class="result placeholder" id="result">Output will appear here...</div>
+  </section>
+
+  <!-- Q&A -->
+  <section class="page" id="qa">
+    <h1>Q&amp;A</h1>
+    <p class="lead">Common questions about Hioshi Obfuscator.</p>
+
+    <div class="qa-item">
+      <h3>What does Hioshi Obfuscator do?</h3>
+      <p>It takes your Lua script and rewrites it into a version that's very hard to read, while behaving exactly the same when it runs.</p>
+    </div>
+    <div class="qa-item">
+      <h3>Is it free to use?</h3>
+      <p>Yes, the tool is free to use on the site.</p>
+    </div>
+    <div class="qa-item">
+      <h3>What's the difference between presets?</h3>
+      <p>Minify only shortens the code. Weak/Medium/Strong add increasing layers of renaming, encryption, and structural changes — stronger presets are harder to reverse but slightly heavier to run.</p>
+    </div>
+    <div class="qa-item">
+      <h3>Will obfuscation change how my script behaves?</h3>
+      <p>No. The logic stays the same — only the readability of the code changes.</p>
+    </div>
+    <div class="qa-item">
+      <h3>Do you store my scripts?</h3>
+      <p>See the Privacy &amp; Policy page for details on what is and isn't stored.</p>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section class="page privacy" id="privacy">
+    <h1>Privacy &amp; Policy</h1>
+    <p class="lead">Last updated: July 2026</p>
+
+    <h3>What we collect</h3>
+    <p>We do not require an account to use the obfuscator. Scripts you submit are processed to generate obfuscated output and are not shared with third parties.</p>
+
+    <h3>Script storage</h3>
+    <p>Submitted scripts are used only to perform the obfuscation and are not kept longer than necessary to return your result.</p>
+
+    <h3>Usage of the service</h3>
+    <p>You are responsible for the scripts you submit. The tool is intended to help developers protect their own original work.</p>
+
+    <h3>Changes to this policy</h3>
+    <p>This policy may be updated from time to time. Continued use of the site means you accept the current version.</p>
+
+    <h3>Contact</h3>
+    <p>Questions about this policy can be sent through the Discord server or GitHub repository.</p>
+  </section>
+
+</main>
+
+<footer>Hioshi Obfuscator — based on <a href="https://github.com/prometheus-lua/Prometheus" style="color:#777;">Prometheus</a> by Elias Oelschner</footer>
+
+<script>
+  const buttons = document.querySelectorAll('nav button');
+  const pages = document.querySelectorAll('.page');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      pages.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.page).classList.add('active');
+      document.getElementById('nav').classList.remove('open');
+    });
+  });
+
+  document.getElementById('burger').addEventListener('click', () => {
+    document.getElementById('nav').classList.toggle('open');
+  });
+
+  // demo-only obfuscate button (placeholder logic, real engine plugs in later)
+  document.getElementById('obfBtn').addEventListener('click', () => {
+    const input = document.getElementById('codeInput').value.trim();
+    const resultBox = document.getElementById('result');
+    if(!input){
+      resultBox.textContent = 'Paste some code first.';
+      resultBox.classList.add('placeholder');
+      return;
+    }
+    resultBox.classList.remove('placeholder');
+    resultBox.textContent = '-- obfuscated with Hioshi (' + document.getElementById('preset').value + ' preset)\n-- [this is a UI preview — real Prometheus output goes here]';
+  });
+</script>
+
+</body>
+</html>
