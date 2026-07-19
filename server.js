@@ -1,9 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs/promises');
+const os = require('os');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const rateLimit = require('express-rate-limit');
 const { nanoid } = require('nanoid');
 const { createClient } = require('@supabase/supabase-js');
+
+const execFileAsync = promisify(execFile);
 
 // ---------- Supabase client ----------
 // SUPABASE_URL and SUPABASE_SERVICE_KEY come from Render's environment
@@ -26,13 +32,38 @@ const obfuscateLimiter = rateLimit({
   message: { error: 'Too many requests. Try again in a minute.' }
 });
 
-// ---------- Obfuscation stub ----------
-// Plug your actual Prometheus/Lua-Hider transform in here. Keeping it as a
-// separate function makes it easy to swap out later without touching routes.
-function obfuscate(code, preset) {
-  // TODO: replace with real Prometheus obfuscator call
-  const banner = `-- protected by Hioshi Obfuscator (${preset})\n`;
-  return banner + code;
+// ---------- Obfuscation via Prometheus CLI ----------
+// Prometheus (https://github.com/prometheus-lua/Prometheus) is pure Lua, so
+// we shell out to the installed CLI rather than calling it as an npm package.
+// Attribution below is required by the Prometheus License.
+const PROMETHEUS_ATTRIBUTION =
+  '-- Based on Prometheus by Elias Oelschner, https://github.com/prometheus-lua/Prometheus\n';
+
+const PRESET_MAP = {
+  minify: 'Minify',
+  weak: 'Weak',
+  medium: 'Medium',
+  strong: 'Strong'
+};
+
+async function obfuscate(code, preset) {
+  const cliPreset = PRESET_MAP[preset] || 'Medium';
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hioshi-'));
+  const inputPath = path.join(tmpDir, 'input.lua');
+  const outputPath = path.join(tmpDir, 'input.obfuscated.lua');
+
+  try {
+    await fs.writeFile(inputPath, code, 'utf8');
+
+    await execFileAsync('prometheus-lua', ['--preset', cliPreset, inputPath], {
+      timeout: 15000
+    });
+
+    const output = await fs.readFile(outputPath, 'utf8');
+    return PROMETHEUS_ATTRIBUTION + output;
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  }
 }
 
 // ---------- POST /obfuscate ----------
@@ -51,7 +82,14 @@ app.post('/obfuscate', obfuscateLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid preset.' });
     }
 
-    const output = obfuscate(code, preset);
+    let output;
+    try {
+      output = await obfuscate(code, preset);
+    } catch (obfErr) {
+      console.error('Prometheus CLI error:', obfErr.message);
+      return res.status(500).json({ error: 'Obfuscation failed. Check that your script is valid Lua.' });
+    }
+
     const id = nanoid(10);
 
     const { error } = await supabase
