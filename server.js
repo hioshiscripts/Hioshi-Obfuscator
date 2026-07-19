@@ -8,6 +8,7 @@ const { promisify } = require('util');
 const rateLimit = require('express-rate-limit');
 const { nanoid } = require('nanoid');
 const { createClient } = require('@supabase/supabase-js');
+const WebSocket = require('ws');
 
 const execFileAsync = promisify(execFile);
 
@@ -17,7 +18,8 @@ const execFileAsync = promisify(execFile);
 // these here or commit them to GitHub.
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { realtime: { transport: WebSocket } }
 );
 
 const app = express();
