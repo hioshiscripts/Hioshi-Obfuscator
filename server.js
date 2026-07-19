@@ -57,7 +57,8 @@ async function obfuscate(code, preset) {
   try {
     await fs.writeFile(inputPath, code, 'utf8');
 
-    await execFileAsync('prometheus-lua', ['--preset', cliPreset, inputPath], {
+    await execFileAsync('lua5.1', ['/opt/prometheus/cli.lua', '--preset', cliPreset, inputPath], {
+      cwd: '/opt/prometheus',
       timeout: 15000
     });
 
